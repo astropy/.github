@@ -1,0 +1,18 @@
+[tool.giles.org_vetting]
+enabled = true
+allowlist = "https://raw.githubusercontent.com/astropy/.github/main/contributor-allowlist.txt"
+message = """
+Hi 👋 and thank you for your contribution! 🙏
+
+This pull request is being closed automatically - but don't worry, this is not the end, and we may re-open it.
+
+For some background, we have recently started seeing a rapid increase in the number of pull requests opened. Some of these are from good-faith humans, but some of which are from autonomous LLM agents or humans using LLMs who do not have a genuine understanding of, or interest in, the project. We are therefore auto-closing pull requests from new contributors, but if you are a good-faith human, we want to make sure your pull request gets considered! So if you would like us to re-open your pull request so that it gets reviewed, you need to do two things:
+
+1. Add a comment here to explain why you need the changes here to be considered, as in how the bug or missing feature affects your work, or whether this is an issue you have encountered but does not affect you.
+
+2. Join the astropy slack using [this invite link](https://join.slack.com/t/astropy/shared_invite/zt-4c1p8lbom-GuaB46o3rPd0ZRJh6MR_kQ) and head over to the **#new-contributor-requests** channel to introduce yourself and let us know about this pull request
+
+The second step is important, as we may otherwise miss notifications about this pull request.
+
+To be clear, our [AI policy](https://github.com/astropy/astropy-project/blob/main/policies/ai-policy.md) does allow the use of LLMs as part of contributions, _but_ we need to see authentic engagement and understanding from humans making the contribution.
+"""
