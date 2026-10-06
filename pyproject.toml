@@ -1,4 +1,7 @@
 [tool.gilesbot]
+[tool.gilesbot.pull_requests]
+enabled = true
+
 [tool.gilesbot.org_vetting]
 enabled = true
 allowlist = "https://raw.githubusercontent.com/astropy/.github/main/contributor-allowlist.txt"
