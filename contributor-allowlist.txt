@@ -1,5 +1,6 @@
 # GitHub usernames (one per line) whose pull requests are not closed by the
 # organization vetting bot even though they are not organization members.
+# last-updated: 2026-01-01T00:00:00
 aarchiba
 abhinuvpitale
 abigailStev
