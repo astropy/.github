@@ -20,3 +20,7 @@ The second step is important, as we may otherwise miss notifications about this 
 
 To be clear, our [AI policy](https://github.com/astropy/astropy-project/blob/main/policies/ai-policy.md) does allow the use of LLMs as part of contributions, _but_ we need to see authentic engagement and understanding from humans making the contribution.
 """
+maintainer_preamble = """
+If you know this is a genuine user and the PR is is compliance with the [AI policy](https://github.com/astropy/astropy-project/blob/main/policies/ai-policy.md), you may re-open this straight away. After two successful merged pull requests, the user will be added to the allowlist and future PRs will no longer be closed automatically.
+"""
+
