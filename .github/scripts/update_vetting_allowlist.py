@@ -35,6 +35,10 @@ The following contributors have had at least {min_merged} pull requests merged i
 and are not organization members, so this adds them to the vetting allowlist:
 
 {entries}
+
+If you believe any of them should not be added to the allowlist, for example if
+they have violated the AI policy, keep them in the allowlist but prefix their
+username with a -
 """
 PR_BODY_ENTRY = "* @{user} ({count} merged pull requests, https://github.com/pulls?q=org%3A{org}+type%3Apr+is%3Amerged+author%3A{user})"
 PR_BODY_NOTHING = "No contributors to add."
