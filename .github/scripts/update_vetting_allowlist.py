@@ -28,6 +28,7 @@ API = "https://api.github.com"
 LAST_UPDATED = re.compile(r"^# last-updated: (\d{4}-\d{2}-\d{2})")
 
 ORG = "astropy"
+ALLOWLIST = "contributor-allowlist.txt"
 MIN_MERGED = 2  # merged pull requests in the organization needed to be added to the allowlist
 
 # Printed to stdout, to be used as the description of the pull request adding
@@ -127,11 +128,7 @@ def merged_pull_request_counts(users):
 
 
 def main():
-    if len(sys.argv) != 2:
-        sys.exit(f"Usage: {sys.argv[0]} ALLOWLIST_FILE")
-    allowlist = sys.argv[1]
-
-    with open(allowlist) as f:
+    with open(ALLOWLIST) as f:
         lines = f.read().splitlines()
     header = [line for line in lines if line.startswith("#")]
     names = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
@@ -139,7 +136,7 @@ def main():
 
     last_updated = next((LAST_UPDATED.match(line) for line in header if LAST_UPDATED.match(line)), None)
     if last_updated is None:
-        sys.exit(f"No '# last-updated: YYYY-MM-DD' line found in {allowlist}")
+        sys.exit(f"No '# last-updated: YYYY-MM-DD' line found in {ALLOWLIST}")
     # Start a day earlier than the last update, in case it ran part way through a day
     since = date.fromisoformat(last_updated.group(1)) - timedelta(days=1)
 
@@ -162,7 +159,7 @@ def main():
 
     now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
     header = [f"# last-updated: {now}" if LAST_UPDATED.match(line) else line for line in header]
-    with open(allowlist, "w") as f:
+    with open(ALLOWLIST, "w") as f:
         f.write("\n".join(header + sorted(names + additions, key=lambda name: name.lstrip("-").lower())) + "\n")
 
 

@@ -35,7 +35,7 @@ jobs:
       - name: Find contributors to add
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python .github/scripts/update_vetting_allowlist.py contributor-allowlist.txt > /tmp/allowlist-update.md
+        run: python .github/scripts/update_vetting_allowlist.py > /tmp/allowlist-update.md
 
       - name: Open a pull request with the additions
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
