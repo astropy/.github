@@ -1,0 +1,48 @@
+# Once a week, add contributors who have had enough pull requests merged in
+# the organization to the vetting allowlist, and open a pull request with the
+# additions. Can also be run by hand from the Actions tab.
+#
+# Pull requests are opened with the workflow token, which requires "Allow
+# GitHub Actions to create and approve pull requests" to be enabled in the
+# repository's Actions settings.
+
+name: Update vetting allowlist
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Find contributors to add
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python .github/scripts/update_vetting_allowlist.py --body /tmp/allowlist-update.md
+
+      - name: Open a pull request with the additions
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          add-paths: contributor-allowlist.txt
+          branch: vetting-allowlist-update
+          delete-branch: true
+          commit-message: Add contributors to the vetting allowlist
+          title: Add contributors to the vetting allowlist
+          body-path: /tmp/allowlist-update.md
