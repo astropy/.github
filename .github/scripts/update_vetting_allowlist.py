@@ -19,6 +19,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 import urllib.request
 from datetime import UTC, date, datetime, timedelta
 
@@ -38,7 +39,7 @@ The following contributors have had at least {min_merged} pull requests merged i
 
 If you believe any of them should not be added to the allowlist, for example if they have violated the AI policy, keep them in the allowlist but prefix their username with a -
 """
-PR_BODY_ENTRY = "* @{user} ({count} merged pull requests, https://github.com/pulls?q=org%3A{org}+type%3Apr+is%3Amerged+author%3A{user})"
+PR_BODY_ENTRY = "* {user} ({count} merged pull requests, [all pull requests to the {org} org](https://github.com/pulls?q=org%3A{org}+type%3Apr+author%3A{user_quoted}))"
 PR_BODY_NOTHING = "No contributors to add."
 SEARCH_LIMIT = 1000  # results per search query, imposed by GitHub
 COUNT_BATCH_SIZE = 50  # users per GraphQL request when counting merged pull requests
@@ -151,7 +152,9 @@ def main():
     if not additions:
         print(PR_BODY_NOTHING)
         return
-    entries = "\n".join(PR_BODY_ENTRY.format(user=user, count=counts[user], org=ORG) for user in additions)
+    entries = "\n".join(
+        PR_BODY_ENTRY.format(user=user, user_quoted=urllib.parse.quote(user), count=counts[user], org=ORG) for user in additions
+    )
     print(PR_BODY.format(min_merged=MIN_MERGED, org=ORG, entries=entries), end="")
 
     now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
