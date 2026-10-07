@@ -1,7 +1,7 @@
 # GitHub usernames (one per line) whose pull requests are not closed by the
 # organization vetting bot even though they are not organization members.
 # Prefix a name with - to explicitly exclude that user from the allowlist.
-# last-updated: 2026-01-01T00:00:00
+# last-updated: 2026-10-07T10:45:05
 0Armaan025
 aarchiba
 aaronwmorris
@@ -19,6 +19,7 @@ agarwalrounak
 agroener
 AiIuru5
 akeemlh
+albireox
 aleksandr-bakanov
 alexrudy
 alipnicky
@@ -26,6 +27,7 @@ All4Gis
 allardbrain
 Alpha-Ursae-Minoris
 amiruna
+anaclaragalvao
 AnaGabela
 anchitjain1234
 andamian
@@ -35,11 +37,14 @@ andycasey
 aniketk21
 anntzer
 AnthonyHorton
+anzelpwj
 aoberto
 aphearin
 aragilar
 aripollak
+arsenelupin14
 arthurxvtv
+ashleythomasbarnes
 astr2600student
 astrobatty
 astrobot
@@ -57,9 +62,11 @@ autocorr
 ayshih
 AyushYadav
 barentsen
+bestdo77
 bharathr98
 bhavyakh
 BillCleveland-USRA
+binggao1230
 bjbomfim
 bjweiner
 bluescarni
@@ -80,6 +87,8 @@ Cadair
 CaioCoutinhoP
 cam72cam
 camipacifici
+CAOShurong
+Carreau
 cbanek
 cbonnett
 ccipac
@@ -113,9 +122,12 @@ dcrichton
 Deen-dot
 deepchatterjeeligo
 demitri
+dependabot[bot]
 derdon
 dfm
+Dhevenddra
 dhomeier
+dhruv1955
 DinoBektesevic
 disha012
 dmcollom
@@ -150,12 +162,15 @@ emellega
 emilylurice
 emirkmo
 emolter
+Enriquerzrz
 Epitrochoid
 erykoff
 esdc-esac-esa-int
 eslavich
 eteq
+evanshinechen
 evertrol
+fajpunk
 falkben
 fchapoton
 fgrollier
@@ -170,6 +185,7 @@ geekypathak21
 ghost
 gibsongreen
 gilleslandais
+github-actions[bot]
 gkanarek
 gmantele
 gmduvvuri
@@ -177,6 +193,7 @@ gpdf
 gpsgibb
 granttremblay
 griffin-h
+H-xie
 hamogu
 HarrietAkot
 havok2063
@@ -212,6 +229,7 @@ JasonS09
 javerbukh
 javier-ballester
 jaymedina
+jberg5
 jberlanga
 jbwhit
 jcsegovia
@@ -226,6 +244,7 @@ jehturner
 jerobado
 Jerry-Ma
 jespinosaar
+JettHiggins
 jfoster17
 jhunkeler
 jiffyclub
@@ -243,6 +262,7 @@ josePhoenix
 jpl-jengelke
 jsobeck
 juanmcloaiza
+Julian-Harbeck
 juliotux
 jvntra
 jwoillez
@@ -250,8 +270,10 @@ kaichogami
 kakirastern
 kalgash82
 kangqiwang
+karlhillx
 karllark
 karlwessel
+karpovantonme
 kathl
 KatKiker
 katrinleinweber
@@ -279,6 +301,8 @@ leejjoon
 legau
 lgarrison
 lglattly
+lmichel
+lmmx
 loicseguin
 lpsinger
 ludwigschwardt
@@ -286,6 +310,7 @@ luzuku
 lvalerom
 Lyalpha
 m-stclair
+m4cd4r4
 macrocosme
 Maia-jp
 malynda
@@ -322,6 +347,7 @@ mkbrewer
 mkelley
 mminin
 moemyself3
+mohsinm-dev
 mommermi
 mperrin
 MridulS
@@ -348,6 +374,7 @@ nmcardoso
 nmearl
 noc0lour
 nocturnalastro
+nomad3
 nparley
 nstarman
 nudomarinero
@@ -359,6 +386,7 @@ okomestudio
 olaurino
 olebole
 olyoberdorf
+Omiii-215
 Onoddil
 opoplawski
 orionlee
@@ -370,11 +398,14 @@ paverett
 pdmElisa
 perrygreenfield
 peterjc
+phirstgemini
 phn
+Pierre-Sassoulas
 pjs902
 pllim
 pothiers
 prajwel
+pre-commit-ci[bot]
 preshanth
 privong
 profxj
@@ -402,6 +433,7 @@ samaloney
 samjrholt
 Sandeep-Desai
 SaOgaz
+sapunyangkut
 Saransh-cpp
 sargas
 sashank27
@@ -447,6 +479,7 @@ taranu
 tbabej
 tboch
 tbowers7
+telegraphic
 Telomelonia
 tepickering
 terben
@@ -457,8 +490,10 @@ timj
 tinuademargaret
 tmplummer
 tomdonaldson
+toniorte
 treeloy
 tribeiro
+trjaffe
 ttdu
 ubutsu
 VarunNikam22
@@ -468,6 +503,7 @@ ViciousEagle03
 vilardellsalles
 vilhelmp
 vinayak-mehta
+vishwas-droid
 vn-ki
 volodymyrss
 vterron
@@ -482,6 +518,7 @@ wtgee
 Xarthisius
 xlucn
 xuanxu
+yaochengchen
 Yash-10
 yashkmr99
 YashNandwana
