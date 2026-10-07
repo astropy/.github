@@ -19,8 +19,6 @@ import json
 import os
 import re
 import sys
-import time
-import urllib.error
 import urllib.request
 from datetime import UTC, date, datetime, timedelta
 
@@ -46,26 +44,29 @@ SEARCH_LIMIT = 1000  # results per search query, imposed by GitHub
 COUNT_BATCH_SIZE = 50  # users per GraphQL request when counting merged pull requests
 
 
+AUTHORS_QUERY = """
+{{
+  search(type: ISSUE, first: 100, after: {after}, query: "org:{org} type:pr is:merged merged:{start}..{end}") {{
+    issueCount
+    pageInfo {{ hasNextPage endCursor }}
+    nodes {{ ... on PullRequest {{ author {{ __typename login }} }} }}
+  }}
+}}
+"""
+COUNT_QUERY = 'u{i}: search(type: ISSUE, first: 1, query: "org:{org} type:pr is:merged author:{user}") {{ issueCount }}'
+
+
 def github_request(url, data=None):
     """
-    GET a URL, or POST JSON data to it, and return the decoded JSON response
-    and the headers, waiting and retrying when rate limited.
+    GET a URL, or POST JSON data to it, and return the decoded JSON response.
     """
     headers = {"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "Content-Type": "application/json"}
-    while True:
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=120) as response:
-                return json.load(response), response.headers
-        except urllib.error.HTTPError as error:
-            if error.code not in (403, 429):
-                raise
-            wait = max(int(error.headers.get("X-RateLimit-Reset", 0)) - time.time(), 0) + 5
-            print(f"Rate limited, waiting {wait:.0f}s", file=sys.stderr)
-            time.sleep(wait)
+    with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=120) as response:
+        return json.load(response)
 
 
 def graphql(query):
-    result, _ = github_request(f"{API}/graphql", json.dumps({"query": query}).encode())
+    result = github_request(f"{API}/graphql", json.dumps({"query": query}).encode())
     if result.get("errors"):
         raise RuntimeError(f"GraphQL query failed: {result['errors']}")
     return result["data"]
@@ -74,7 +75,7 @@ def graphql(query):
 def public_members():
     members = set()
     for page in range(1, 100):
-        batch, _ = github_request(f"{API}/orgs/{ORG}/public_members?per_page=100&page={page}")
+        batch = github_request(f"{API}/orgs/{ORG}/public_members?per_page=100&page={page}")
         members |= {member["login"].lower() for member in batch}
         if len(batch) < 100:
             return members
@@ -89,22 +90,20 @@ def merged_pull_request_authors(start, end):
     A search returns at most SEARCH_LIMIT results, so the date range is split
     in two until each part fits.
     """
-    search = f'search(type: ISSUE, first: 100, after: %s, query: "org:{ORG} type:pr is:merged merged:{start}..{end}")'
-    page = graphql(f"{{ {search % 'null'} {{ issueCount pageInfo {{ hasNextPage endCursor }} nodes {{ ... on PullRequest {{ author {{ __typename login }} }} }} }} }}")["search"]
-
-    if page["issueCount"] > SEARCH_LIMIT and start < end:
-        middle = start + (end - start) // 2
-        return merged_pull_request_authors(start, middle) | merged_pull_request_authors(middle + timedelta(days=1), end)
-
     authors = {}
+    after = "null"
     while True:
+        page = graphql(AUTHORS_QUERY.format(after=after, org=ORG, start=start, end=end))["search"]
+        if page["issueCount"] > SEARCH_LIMIT and start < end:
+            middle = start + (end - start) // 2
+            return merged_pull_request_authors(start, middle) | merged_pull_request_authors(middle + timedelta(days=1), end)
         for node in page["nodes"]:
             author = node["author"]
             if author and author["__typename"] != "Bot":
                 authors.setdefault(author["login"].lower(), author["login"])
         if not page["pageInfo"]["hasNextPage"]:
             return authors
-        page = graphql(f"{{ {search % json.dumps(page['pageInfo']['endCursor'])} {{ pageInfo {{ hasNextPage endCursor }} nodes {{ ... on PullRequest {{ author {{ __typename login }} }} }} }} }}")["search"]
+        after = json.dumps(page["pageInfo"]["endCursor"])
 
 
 def merged_pull_request_counts(users):
@@ -115,11 +114,7 @@ def merged_pull_request_counts(users):
     counts = {}
     for start in range(0, len(users), COUNT_BATCH_SIZE):
         batch = users[start : start + COUNT_BATCH_SIZE]
-        fields = " ".join(
-            f'u{i}: search(type: ISSUE, first: 1, query: "org:{ORG} type:pr is:merged author:{user}") {{ issueCount }}'
-            for i, user in enumerate(batch)
-        )
-        data = graphql(f"{{ {fields} }}")
+        data = graphql("{ " + " ".join(COUNT_QUERY.format(i=i, org=ORG, user=user) for i, user in enumerate(batch)) + " }")
         counts.update({user: data[f"u{i}"]["issueCount"] for i, user in enumerate(batch)})
     return counts
 
