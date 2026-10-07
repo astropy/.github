@@ -15,7 +15,6 @@ many users to be fetched in one request, with the token from the GITHUB_TOKEN
 environment variable, and only the standard library.
 """
 
-import argparse
 import json
 import os
 import re
@@ -128,23 +127,21 @@ def merged_pull_request_counts(users):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--allowlist", default="contributor-allowlist.txt", help="path of the allowlist file")
-    parser.add_argument("--since", type=date.fromisoformat, help="consider pull requests merged since this date instead of the last-updated header")
-    parser.add_argument("--dry-run", action="store_true", help="report but do not modify the allowlist")
-    args = parser.parse_args()
+    if len(sys.argv) != 2:
+        sys.exit(f"Usage: {sys.argv[0]} ALLOWLIST_FILE")
+    allowlist = sys.argv[1]
 
-    with open(args.allowlist) as f:
+    with open(allowlist) as f:
         lines = f.read().splitlines()
     header = [line for line in lines if line.startswith("#")]
     names = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
     listed = {name.lstrip("-").lower() for name in names}
 
     last_updated = next((LAST_UPDATED.match(line) for line in header if LAST_UPDATED.match(line)), None)
-    if args.since is None and last_updated is None:
-        sys.exit(f"No '# last-updated: YYYY-MM-DD' line found in {args.allowlist}, use --since")
+    if last_updated is None:
+        sys.exit(f"No '# last-updated: YYYY-MM-DD' line found in {allowlist}")
     # Start a day earlier than the last update, in case it ran part way through a day
-    since = (args.since or date.fromisoformat(last_updated.group(1))) - timedelta(days=1)
+    since = date.fromisoformat(last_updated.group(1)) - timedelta(days=1)
 
     print(f"Looking for pull requests merged in {ORG} since {since}", file=sys.stderr)
     candidates = merged_pull_request_authors(since, datetime.now(UTC).date())
@@ -163,11 +160,9 @@ def main():
     entries = "\n".join(PR_BODY_ENTRY.format(user=user, count=counts[user], org=ORG) for user in additions)
     print(PR_BODY.format(min_merged=MIN_MERGED, org=ORG, entries=entries), end="")
 
-    if args.dry_run:
-        return
     now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
     header = [f"# last-updated: {now}" if LAST_UPDATED.match(line) else line for line in header]
-    with open(args.allowlist, "w") as f:
+    with open(allowlist, "w") as f:
         f.write("\n".join(header + sorted(names + additions, key=lambda name: name.lstrip("-").lower())) + "\n")
 
 
