@@ -98,13 +98,12 @@ def paginate(url):
         url = match.group(1)
 
 
-def authors_of_merged_pull_requests(query):
+def search_merged_pull_requests(query):
     """
-    The logins of the (non-bot) authors of the merged pull requests matching
-    a search query, in first-seen order, from at most the 1000 results the
-    search allows. Deleted users have no author and are skipped.
+    Yield the ``author`` of each merged pull request matching a search query,
+    and the total number of matches as the first item. At most the 1000
+    results the search API allows are returned.
     """
-    authors = {}
     cursor = "null"
     while True:
         data = graphql(f"""
@@ -116,15 +115,40 @@ def authors_of_merged_pull_requests(query):
               }}
             }}
         """)["search"]
-        if cursor == "null" and data["issueCount"] > 1000:
-            print(f"Warning: {data['issueCount']} merged pull requests match, only the first 1000 are considered", file=sys.stderr)
+        if cursor == "null":
+            yield data["issueCount"]
         for node in data["nodes"]:
-            author = node.get("author")
-            if author and author["__typename"] != "Bot" and not author["login"].endswith("[bot]"):
-                authors.setdefault(author["login"].lower(), author["login"])
+            yield node.get("author")
         if not data["pageInfo"]["hasNextPage"]:
-            return authors
+            return
         cursor = json.dumps(data["pageInfo"]["endCursor"])
+
+
+def authors_of_merged_pull_requests(org, start, end, authors=None):
+    """
+    The logins of the (non-bot) authors of pull requests merged in the
+    organization between two dates (inclusive), in first-seen order, as a
+    dict mapping lower-case login to login. Deleted users have no author and
+    are skipped.
+
+    The search API returns at most 1000 results per query, so the date range
+    is split in two until each part is below that.
+    """
+    if authors is None:
+        authors = {}
+    results = search_merged_pull_requests(f"org:{org} merged:{start:%Y-%m-%d}..{end:%Y-%m-%d}")
+    total = next(results)
+    if total > 1000 and start < end:
+        middle = start + (end - start) / 2
+        authors_of_merged_pull_requests(org, start, middle, authors)
+        authors_of_merged_pull_requests(org, middle + timedelta(days=1), end, authors)
+        return authors
+    if total > 1000:
+        print(f"Warning: {total} merged pull requests on {start:%Y-%m-%d}, only the first 1000 are considered", file=sys.stderr)
+    for author in results:
+        if author and author["__typename"] != "Bot" and not author["login"].endswith("[bot]"):
+            authors.setdefault(author["login"].lower(), author["login"])
+    return authors
 
 
 def count_merged_pull_requests(org, users):
@@ -213,7 +237,7 @@ def main():
     already = listed_names(lines)
     members = public_members(args.org)
 
-    candidates = authors_of_merged_pull_requests(f"org:{args.org} merged:>={since:%Y-%m-%d}")
+    candidates = authors_of_merged_pull_requests(args.org, since, datetime.now(UTC))
     print(f"{len(candidates)} contributors with pull requests merged since then", file=sys.stderr)
 
     to_count = []
