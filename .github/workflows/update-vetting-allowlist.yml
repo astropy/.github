@@ -1,6 +1,8 @@
 # Once a week, add contributors who have had enough pull requests merged in
 # the organization to the vetting allowlist, and open a pull request with the
-# additions. Can also be run by hand from the Actions tab.
+# additions. Can also be run by hand from the Actions tab. On pull requests
+# that change the script or this workflow, the script is run and its output
+# shown, but no pull request is opened.
 #
 # Pull requests are opened with the workflow token, which requires "Allow
 # GitHub Actions to create and approve pull requests" to be enabled in the
@@ -12,6 +14,10 @@ on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/scripts/update_vetting_allowlist.py
+      - .github/workflows/update-vetting-allowlist.yml
 
 permissions:
   contents: write
@@ -37,7 +43,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python .github/scripts/update_vetting_allowlist.py > /tmp/allowlist-update.md
 
+      - name: Show the proposed changes
+        run: |
+          echo "::group::Pull request description"
+          cat /tmp/allowlist-update.md
+          echo "::endgroup::"
+          git --no-pager diff
+
       - name: Open a pull request with the additions
+        if: github.event_name != 'pull_request'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
         with:
           add-paths: contributor-allowlist.txt
