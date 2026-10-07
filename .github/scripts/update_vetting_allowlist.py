@@ -85,7 +85,8 @@ def merged_pull_request_authors(start, end):
     """
     The authors of the pull requests merged in the organization between two
     dates (inclusive), as a dict mapping lower-case login to login, skipping
-    bots and deleted users.
+    deleted users. Bots are included, with the "[bot]" suffix that the REST
+    API and webhooks use for their login.
 
     A search returns at most SEARCH_LIMIT results, so the date range is split
     in two until each part fits.
@@ -99,8 +100,12 @@ def merged_pull_request_authors(start, end):
             return merged_pull_request_authors(start, middle) | merged_pull_request_authors(middle + timedelta(days=1), end)
         for node in page["nodes"]:
             author = node["author"]
-            if author and author["__typename"] != "Bot":
-                authors.setdefault(author["login"].lower(), author["login"])
+            if author is None:
+                continue
+            login = author["login"]
+            if author["__typename"] == "Bot" and not login.endswith("[bot]"):
+                login += "[bot]"
+            authors.setdefault(login.lower(), login)
         if not page["pageInfo"]["hasNextPage"]:
             return authors
         after = json.dumps(page["pageInfo"]["endCursor"])
