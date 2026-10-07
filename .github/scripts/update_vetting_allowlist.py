@@ -9,8 +9,9 @@ organization, are not already listed (with or without a leading "-", which
 explicitly excludes them), and are not a public member of the organization.
 When users are added, the "last-updated" time is set to now.
 
-Uses the GitHub token from the GITHUB_TOKEN environment variable, and only the
-standard library.
+Uses the GitHub GraphQL API, which allows the merged pull request counts of
+many users to be fetched in one request, with the token from the GITHUB_TOKEN
+environment variable (required), and only the standard library.
 """
 
 import argparse
@@ -20,71 +21,129 @@ import re
 import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from datetime import UTC, datetime, timedelta
 
 API = "https://api.github.com"
 LAST_UPDATED = re.compile(r"^# last-updated: (\d{4}-\d{2}-\d{2})(?:T\d{2}:\d{2}:\d{2})?\s*$")
 
+# How many users to count merged pull requests for in a single GraphQL request
+COUNT_BATCH_SIZE = 50
 
-def github_get(url, params=None):
-    """
-    GET a GitHub API URL as JSON, waiting and retrying when rate limited.
-    """
-    if params:
-        url += "?" + urllib.parse.urlencode(params)
-    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+
+def github_headers():
     token = os.environ.get("GITHUB_TOKEN")
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    if not token:
+        sys.exit("GITHUB_TOKEN must be set (the GraphQL API requires authentication)")
+    return {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": f"Bearer {token}",
+    }
+
+
+def wait_for_rate_limit(headers):
+    wait = max(int(headers.get("X-RateLimit-Reset", 0)) - time.time(), 0) + 5
+    print(f"Rate limited, waiting {wait:.0f}s", file=sys.stderr)
+    time.sleep(wait)
+
+
+def github_request(url, data=None):
+    """
+    Make a GitHub API request (GET, or POST with a JSON body) and return the
+    decoded JSON response and the headers, waiting and retrying when rate
+    limited.
+    """
     while True:
+        request = urllib.request.Request(url, headers=github_headers(), data=data, method="POST" if data else "GET")
+        if data:
+            request.add_header("Content-Type", "application/json")
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60) as response:
+            with urllib.request.urlopen(request, timeout=120) as response:
                 return json.load(response), response.headers
         except urllib.error.HTTPError as error:
-            if error.code in (403, 429) and error.headers.get("X-RateLimit-Remaining") == "0":
-                wait = max(int(error.headers.get("X-RateLimit-Reset", 0)) - time.time(), 0) + 5
-            elif error.code in (403, 429) and "rate limit" in error.read().decode(errors="replace").lower():
-                wait = int(error.headers.get("Retry-After", 60))
-            else:
-                raise
-            print(f"Rate limited, waiting {wait:.0f}s", file=sys.stderr)
-            time.sleep(wait)
+            if error.code in (403, 429):
+                wait_for_rate_limit(error.headers)
+                continue
+            raise
 
 
-def paginate(url, params=None):
-    params = dict(params or {}, per_page=100)
+def graphql(query):
+    """
+    Run a GraphQL query and return its ``data``, raising on errors (other
+    than rate limiting, which is waited out).
+    """
     while True:
-        items, headers = github_get(url, params)
+        result, headers = github_request(f"{API}/graphql", json.dumps({"query": query}).encode())
+        errors = result.get("errors") or []
+        if any(error.get("type") == "RATE_LIMITED" for error in errors):
+            wait_for_rate_limit(headers)
+            continue
+        if errors:
+            raise RuntimeError("GraphQL query failed: " + "; ".join(error.get("message", str(error)) for error in errors))
+        return result["data"]
+
+
+def paginate(url):
+    """
+    Yield the items of a paginated REST list endpoint.
+    """
+    url += "?per_page=100"
+    while True:
+        items, headers = github_request(url)
         yield from items
         match = re.search(r'<([^>]+)>; rel="next"', headers.get("Link", ""))
         if not match:
             return
-        url, params = match.group(1), None
+        url = match.group(1)
 
 
-def search_merged_pull_requests(query):
+def authors_of_merged_pull_requests(query):
     """
-    Yield the merged pull requests matching a search query (at most the 1000
-    the search API allows).
+    The logins of the (non-bot) authors of the merged pull requests matching
+    a search query, in first-seen order, from at most the 1000 results the
+    search allows. Deleted users have no author and are skipped.
     """
-    url = f"{API}/search/issues"
-    params = {"q": f"type:pr is:merged {query}", "per_page": 100, "sort": "created", "order": "desc"}
-    page = 1
+    authors = {}
+    cursor = "null"
     while True:
-        result, _ = github_get(url, dict(params, page=page))
-        if page == 1 and result["total_count"] > 1000:
-            print(f"Warning: {result['total_count']} merged pull requests match, only the first 1000 are considered", file=sys.stderr)
-        yield from result["items"]
-        if len(result["items"]) < 100 or page * 100 >= 1000:
-            return
-        page += 1
+        data = graphql(f"""
+            {{
+              search(type: ISSUE, first: 100, after: {cursor}, query: {json.dumps("type:pr is:merged " + query)}) {{
+                issueCount
+                pageInfo {{ hasNextPage endCursor }}
+                nodes {{ ... on PullRequest {{ author {{ __typename login }} }} }}
+              }}
+            }}
+        """)["search"]
+        if cursor == "null" and data["issueCount"] > 1000:
+            print(f"Warning: {data['issueCount']} merged pull requests match, only the first 1000 are considered", file=sys.stderr)
+        for node in data["nodes"]:
+            author = node.get("author")
+            if author and author["__typename"] != "Bot" and not author["login"].endswith("[bot]"):
+                authors.setdefault(author["login"].lower(), author["login"])
+        if not data["pageInfo"]["hasNextPage"]:
+            return authors
+        cursor = json.dumps(data["pageInfo"]["endCursor"])
 
 
-def count_merged_pull_requests(org, user):
-    result, _ = github_get(f"{API}/search/issues", {"q": f"org:{org} type:pr is:merged author:{user}", "per_page": 1})
-    return result["total_count"]
+def count_merged_pull_requests(org, users):
+    """
+    The number of merged pull requests in the organization of each of the
+    given users, as a dict, fetched in batches of aliased searches.
+    """
+    counts = {}
+    users = list(users)
+    for start in range(0, len(users), COUNT_BATCH_SIZE):
+        batch = users[start : start + COUNT_BATCH_SIZE]
+        fields = "\n".join(
+            f"u{i}: search(type: ISSUE, first: 1, query: {json.dumps(f'org:{org} type:pr is:merged author:{user}')}) {{ issueCount }}"
+            for i, user in enumerate(batch)
+        )
+        data = graphql(f"{{\n{fields}\n}}")
+        for i, user in enumerate(batch):
+            counts[user] = data[f"u{i}"]["issueCount"]
+    return counts
 
 
 def public_members(org):
@@ -154,23 +213,20 @@ def main():
     already = listed_names(lines)
     members = public_members(args.org)
 
-    candidates = {}
-    for pull in search_merged_pull_requests(f"org:{args.org} merged:>={since:%Y-%m-%d}"):
-        user = pull["user"]
-        if user["type"] == "Bot" or user["login"].endswith("[bot]"):
-            continue
-        candidates.setdefault(user["login"].lower(), user["login"])
-
+    candidates = authors_of_merged_pull_requests(f"org:{args.org} merged:>={since:%Y-%m-%d}")
     print(f"{len(candidates)} contributors with pull requests merged since then", file=sys.stderr)
 
-    additions = {}
+    to_count = []
     for login_lower, login in sorted(candidates.items()):
         if login_lower in already:
             continue
         if login_lower in members:
             print(f"  {login}: public member of {args.org}, skipping", file=sys.stderr)
             continue
-        count = count_merged_pull_requests(args.org, login)
+        to_count.append(login)
+
+    additions = {}
+    for login, count in count_merged_pull_requests(args.org, to_count).items():
         if count >= args.min_merged:
             print(f"  {login}: {count} merged pull requests, adding", file=sys.stderr)
             additions[login] = count
