@@ -62,11 +62,9 @@ autocorr
 ayshih
 AyushYadav
 barentsen
-bestdo77
 bharathr98
 bhavyakh
 BillCleveland-USRA
-binggao1230
 bjbomfim
 bjweiner
 bluescarni
@@ -125,7 +123,6 @@ demitri
 dependabot[bot]
 derdon
 dfm
-Dhevenddra
 dhomeier
 dhruv1955
 DinoBektesevic
@@ -270,10 +267,8 @@ kaichogami
 kakirastern
 kalgash82
 kangqiwang
-karlhillx
 karllark
 karlwessel
-karpovantonme
 kathl
 KatKiker
 katrinleinweber
@@ -347,7 +342,6 @@ mkbrewer
 mkelley
 mminin
 moemyself3
-mohsinm-dev
 mommermi
 mperrin
 MridulS
@@ -503,7 +497,6 @@ ViciousEagle03
 vilardellsalles
 vilhelmp
 vinayak-mehta
-vishwas-droid
 vn-ki
 volodymyrss
 vterron
@@ -518,7 +511,6 @@ wtgee
 Xarthisius
 xlucn
 xuanxu
-yaochengchen
 Yash-10
 yashkmr99
 YashNandwana
