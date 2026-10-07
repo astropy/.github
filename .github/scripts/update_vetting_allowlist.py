@@ -27,6 +27,17 @@ from datetime import UTC, date, datetime, timedelta
 
 API = "https://api.github.com"
 LAST_UPDATED = re.compile(r"^# last-updated: (\d{4}-\d{2}-\d{2})")
+
+# Printed to stdout, to be used as the description of the pull request adding
+# the contributors to the allowlist, with one PR_BODY_ENTRY line per addition.
+PR_BODY = """\
+The following contributors have had at least {min_merged} pull requests merged in the {org} organization \
+and are not organization members, so this adds them to the vetting allowlist:
+
+{entries}
+"""
+PR_BODY_ENTRY = "* @{user} ({count} merged pull requests, https://github.com/pulls?q=org%3A{org}+type%3Apr+is%3Amerged+author%3A{user})"
+PR_BODY_NOTHING = "No contributors to add."
 SEARCH_LIMIT = 1000  # results per search query, imposed by GitHub
 COUNT_BATCH_SIZE = 50  # users per GraphQL request when counting merged pull requests
 
@@ -142,13 +153,10 @@ def main():
         print(f"  {user}: {counts[user]} merged pull requests{', adding' if user in additions else ''}", file=sys.stderr)
 
     if not additions:
-        print("No contributors to add.")
+        print(PR_BODY_NOTHING)
         return
-    print(f"The following contributors have had at least {args.min_merged} pull requests merged in the {args.org} "
-          f"organization and are not organization members, so this adds them to the vetting allowlist:\n")
-    for user in additions:
-        print(f"* @{user} ({counts[user]} merged pull requests, "
-              f"https://github.com/pulls?q=org%3A{args.org}+type%3Apr+is%3Amerged+author%3A{user})")
+    entries = "\n".join(PR_BODY_ENTRY.format(user=user, count=counts[user], org=args.org) for user in additions)
+    print(PR_BODY.format(min_merged=args.min_merged, org=args.org, entries=entries), end="")
 
     if args.dry_run:
         return
