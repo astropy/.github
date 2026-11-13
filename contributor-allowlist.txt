@@ -1,7 +1,7 @@
 # GitHub usernames (one per line) whose pull requests are not closed by the
 # organization vetting bot even though they are not organization members.
 # Prefix a name with - to explicitly exclude that user from the allowlist.
-# last-updated: 2026-10-07T10:45:05
+# last-updated: 2026-11-09T06:28:14
 0Armaan025
 aarchiba
 aaronwmorris
@@ -93,6 +93,7 @@ ccipac
 cclauss
 cdeil
 ceb8
+cgarling
 cgobat
 cgohlke
 chris-simpson
@@ -117,6 +118,7 @@ davidmpaz
 DavoGrant
 DBerke
 dcrichton
+Debajeet-1411
 Deen-dot
 deepchatterjeeligo
 demitri
@@ -336,6 +338,7 @@ mfixstsci
 mfonism
 mhsarmiento
 mhvk
+michaelbaisch
 migueldvb
 mirca
 mirochaj
@@ -344,6 +347,7 @@ mkbrewer
 mkelley
 mminin
 moemyself3
+Mohit-Ak
 mommermi
 mperrin
 MridulS
@@ -361,6 +365,7 @@ naveensrinivasan
 nden
 nealmcb
 neutrinoceros
+ngoldbaum
 nhmc
 nicoddemus
 NikitaTewary
@@ -444,6 +449,7 @@ shaileshahuja
 shanmbic
 Shivam250702
 shresthasurav
+shreyasbapat
 simongibbons
 simontorres
 sladen
